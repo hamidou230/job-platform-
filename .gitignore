@@ -1,0 +1,15 @@
+# Backend
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/uploads/
+
+# IDE / outils locaux
+.claude/
+.idea/
+.vscode/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
