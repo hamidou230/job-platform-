@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: jobplatform_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: jobplatform
+      MYSQL_USER: jobuser
+      MYSQL_PASSWORD: jobpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: jobplatform_backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "mysql://jobuser:jobpassword@mysql:3306/jobplatform"
+      JWT_SECRET: "change_me_in_production_super_secret_key"
+      JWT_EXPIRES_IN: "7d"
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/uploads:/app/uploads
+    command: sh -c "npx prisma migrate deploy && node dist/src/main.js"
+
+volumes:
+  mysql_data:
