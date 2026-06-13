@@ -21,6 +21,14 @@ export class CompaniesService {
     return this.prisma.company.update({ where: { userId: user.userId }, data: dto });
   }
 
+  async setLogo(user: AuthUser, logoUrl: string) {
+    return this.prisma.company.update({
+      where: { userId: user.userId },
+      data: { logoUrl },
+      select: { id: true, logoUrl: true },
+    });
+  }
+
   async findAll(pagination: PaginationDto) {
     const where = pagination.search
       ? { name: { contains: pagination.search } }

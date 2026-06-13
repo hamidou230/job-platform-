@@ -26,7 +26,8 @@ async function bootstrap() {
   app.useGlobalFilters(new HttpExceptionFilter());
 
   // Fichiers statiques (CV, avatars, logos) -> /uploads/...
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), { prefix: '/uploads/' });
+  // process.cwd() = /app dans Docker, = backend/ en dev — indépendant de __dirname
+  app.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
 
   app.setGlobalPrefix('api');
 

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/admin_providers.dart';
 import '../../domain/admin_stats.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import 'admin_list_screen.dart';
 
 class AdminDashboardScreen extends ConsumerWidget {
   const AdminDashboardScreen({super.key});
@@ -76,12 +77,12 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cards = [
-      _StatData('Utilisateurs', stats.users, Icons.people_outline, Colors.blue),
-      _StatData('Étudiants', stats.students, Icons.school_outlined, Colors.teal),
-      _StatData('Entreprises', stats.companies, Icons.business_outlined, Colors.indigo),
-      _StatData('Offres', stats.offers, Icons.work_outline, Colors.deepPurple),
-      _StatData('Offres ouvertes', stats.openOffers, Icons.lock_open_outlined, Colors.green),
-      _StatData('Candidatures', stats.applications, Icons.description_outlined, Colors.orange),
+      _StatData('Utilisateurs', stats.users, Icons.people_outline, Colors.blue, AdminListType.users),
+      _StatData('Étudiants', stats.students, Icons.school_outlined, Colors.teal, AdminListType.students),
+      _StatData('Entreprises', stats.companies, Icons.business_outlined, Colors.indigo, AdminListType.companies),
+      _StatData('Offres', stats.offers, Icons.work_outline, Colors.deepPurple, AdminListType.offers),
+      _StatData('Offres ouvertes', stats.openOffers, Icons.lock_open_outlined, Colors.green, AdminListType.openOffers),
+      _StatData('Candidatures', stats.applications, Icons.description_outlined, Colors.orange, AdminListType.applications),
     ];
 
     return LayoutBuilder(
@@ -109,7 +110,8 @@ class _StatData {
   final int value;
   final IconData icon;
   final Color color;
-  _StatData(this.label, this.value, this.icon, this.color);
+  final AdminListType listType;
+  _StatData(this.label, this.value, this.icon, this.color, this.listType);
 }
 
 class _StatCard extends StatelessWidget {
@@ -120,20 +122,31 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Icon(data.icon, color: data.color, size: 28),
-            const Spacer(),
-            Text('${data.value}',
-                style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
-            Text(data.label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-          ],
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/admin/list/${data.listType.name}'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Icon(data.icon, color: data.color, size: 28),
+                  Icon(Icons.arrow_forward_ios, size: 14,
+                      color: theme.colorScheme.onSurfaceVariant),
+                ],
+              ),
+              const Spacer(),
+              Text('${data.value}',
+                  style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+              Text(data.label,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            ],
+          ),
         ),
       ),
     );

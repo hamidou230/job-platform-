@@ -20,6 +20,7 @@ class StudentProfile {
   final String? bio;
   final String? skills;
   final String? cvUrl;
+  final String? avatarUrl;
 
   const StudentProfile({
     required this.id,
@@ -32,6 +33,7 @@ class StudentProfile {
     this.bio,
     this.skills,
     this.cvUrl,
+    this.avatarUrl,
   });
 
   String get fullName => '$firstName $lastName';
@@ -49,6 +51,7 @@ class StudentProfile {
         bio: j['bio'],
         skills: j['skills'],
         cvUrl: j['cvUrl'],
+        avatarUrl: j['avatarUrl'],
       );
 }
 

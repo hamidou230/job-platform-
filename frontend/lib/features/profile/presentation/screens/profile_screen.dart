@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../providers/profile_providers.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../../auth/domain/user.dart';
+import '../../../../core/constants/app_constants.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -26,6 +27,13 @@ class ProfileScreen extends ConsumerWidget {
       UserRole.admin => 'Administrateur',
       _ => '—',
     };
+    final rawPhotoUrl = user.student?.avatarUrl ?? user.company?.logoUrl;
+    final photoUrl = rawPhotoUrl != null
+        ? (rawPhotoUrl.startsWith('http')
+            ? rawPhotoUrl
+            : '${AppConstants.baseUrl.replaceFirst(RegExp(r'/api$'), '')}$rawPhotoUrl')
+        : null;
+    final action = ref.watch(profileProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -47,14 +55,45 @@ class ProfileScreen extends ConsumerWidget {
           Center(
             child: Column(
               children: [
-                CircleAvatar(
-                  radius: 44,
-                  backgroundColor: cs.primaryContainer,
-                  child: Text(
-                    displayName.characters.first.toUpperCase(),
-                    style: TextStyle(
-                        fontSize: 36, fontWeight: FontWeight.bold, color: cs.onPrimaryContainer),
-                  ),
+                Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 44,
+                      backgroundColor: cs.primaryContainer,
+                      backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                      child: photoUrl == null
+                          ? Text(
+                              displayName.characters.first.toUpperCase(),
+                              style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color: cs.onPrimaryContainer),
+                            )
+                          : null,
+                    ),
+                    if (user.role == UserRole.student || user.role == UserRole.company)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: action.isUploadingAvatar
+                              ? null
+                              : () => _pickAndUploadAvatar(context, ref, user),
+                          child: CircleAvatar(
+                            radius: 15,
+                            backgroundColor: cs.primary,
+                            child: action.isUploadingAvatar
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                : Icon(Icons.camera_alt, size: 16, color: cs.onPrimary),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 Text(displayName,
@@ -85,6 +124,28 @@ class ProfileScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _pickAndUploadAvatar(BuildContext context, WidgetRef ref, AppUser user) async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: false,
+    );
+    if (result == null || result.files.single.path == null) return;
+    final file = result.files.single;
+    final err = await ref.read(profileProvider.notifier).uploadAvatar(
+          filePath: file.path!,
+          fileName: file.name,
+          isCompany: user.role == UserRole.company,
+        );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err ?? 'Photo mise à jour ✅'),
+          backgroundColor: err != null ? Theme.of(context).colorScheme.error : null,
+        ),
+      );
+    }
   }
 
   List<Widget> _studentSections(BuildContext context, WidgetRef ref, AppUser user) {

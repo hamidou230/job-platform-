@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/constants/app_constants.dart';
 import '../providers/offer_applications_providers.dart';
 import '../../domain/application.dart';
 
@@ -103,6 +105,30 @@ class _ApplicantCard extends ConsumerWidget {
     final cs = theme.colorScheme;
     final applicant = app.applicant;
 
+    final cvUrl = app.cvUrl ?? applicant?.cvUrl;
+
+    Future<void> openCv() async {
+      if (cvUrl == null || cvUrl.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Aucun CV disponible pour ce candidat.')),
+        );
+        return;
+      }
+      // Le backend stocke un chemin relatif (/uploads/cv/xxx.pdf).
+      // On reconstruit l'URL absolue en retirant le suffixe /api de la baseUrl.
+      final rawUrl = cvUrl.startsWith('http')
+          ? cvUrl
+          : '${AppConstants.baseUrl.replaceFirst(RegExp(r'/api$'), '')}$cvUrl';
+      final uri = Uri.tryParse(rawUrl);
+      if (uri == null || !await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Impossible d\'ouvrir le CV.')),
+          );
+        }
+      }
+    }
+
     Future<void> setStatus(String status) async {
       final fn = ref.read(updateApplicationStatusProvider);
       await fn(app.id, status, offerId);
@@ -165,6 +191,12 @@ class _ApplicantCard extends ConsumerWidget {
               spacing: 8,
               runSpacing: 4,
               children: [
+                if (cvUrl != null && cvUrl.isNotEmpty)
+                  OutlinedButton.icon(
+                    onPressed: openCv,
+                    icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                    label: const Text('Voir le CV'),
+                  ),
                 FilledButton.tonalIcon(
                   onPressed: () => setStatus('ACCEPTED'),
                   icon: const Icon(Icons.check, size: 18),

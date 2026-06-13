@@ -23,6 +23,23 @@ class ProfileRepository {
     }
   }
 
+  Future<String> uploadAvatar({required String filePath, required String fileName, required bool isCompany}) async {
+    try {
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+      final endpoint = isCompany ? '/companies/me/logo' : '/students/me/avatar';
+      final res = await _dio.post(
+        endpoint,
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
+      );
+      return (res.data['avatarUrl'] ?? res.data['logoUrl']) as String;
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
   /// Upload du CV (PDF/DOC/DOCX) en multipart vers POST /students/me/cv.
   /// Renvoie l'URL relative du CV stockée côté serveur (ex: /uploads/cv/cv-123.pdf).
   Future<String> uploadCv({required String filePath, required String fileName}) async {

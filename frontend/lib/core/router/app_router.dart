@@ -9,6 +9,7 @@ import '../../features/home/presentation/home_shell.dart';
 import '../../features/offers/presentation/screens/offer_detail_screen.dart';
 import '../../features/offers/presentation/screens/create_offer_screen.dart';
 import '../../features/applications/presentation/screens/offer_applications_screen.dart';
+import '../../features/admin/presentation/screens/admin_list_screen.dart';
 
 /// Petit pont entre Riverpod et go_router :
 /// go_router se rafraîchit (et ré-évalue `redirect`) chaque fois que
@@ -90,6 +91,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final offerId = state.pathParameters['id']!;
           return OfferDetailScreen(offerId: offerId);
+        },
+      ),
+      GoRoute(
+        path: '/admin/list/:type',
+        builder: (context, state) {
+          final typeStr = state.pathParameters['type']!;
+          final type = AdminListType.values.firstWhere(
+            (e) => e.name == typeStr,
+            orElse: () => AdminListType.users,
+          );
+          return AdminListScreen(type: type);
         },
       ),
     ],

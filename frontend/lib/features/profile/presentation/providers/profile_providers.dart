@@ -5,13 +5,26 @@ import '../../../auth/presentation/providers/auth_providers.dart';
 class ProfileActionState {
   final bool isSaving;
   final bool isUploadingCv;
+  final bool isUploadingAvatar;
   final String? error;
-  const ProfileActionState({this.isSaving = false, this.isUploadingCv = false, this.error});
+  const ProfileActionState({
+    this.isSaving = false,
+    this.isUploadingCv = false,
+    this.isUploadingAvatar = false,
+    this.error,
+  });
 
-  ProfileActionState copyWith({bool? isSaving, bool? isUploadingCv, String? error, bool clearError = false}) {
+  ProfileActionState copyWith({
+    bool? isSaving,
+    bool? isUploadingCv,
+    bool? isUploadingAvatar,
+    String? error,
+    bool clearError = false,
+  }) {
     return ProfileActionState(
       isSaving: isSaving ?? this.isSaving,
       isUploadingCv: isUploadingCv ?? this.isUploadingCv,
+      isUploadingAvatar: isUploadingAvatar ?? this.isUploadingAvatar,
       error: clearError ? null : (error ?? this.error),
     );
   }
@@ -49,6 +62,19 @@ class ProfileNotifier extends Notifier<ProfileActionState> {
       return null;
     } catch (e) {
       state = state.copyWith(isSaving: false, error: e.toString());
+      return e.toString();
+    }
+  }
+
+  Future<String?> uploadAvatar({required String filePath, required String fileName, required bool isCompany}) async {
+    state = state.copyWith(isUploadingAvatar: true, clearError: true);
+    try {
+      await _repo.uploadAvatar(filePath: filePath, fileName: fileName, isCompany: isCompany);
+      await ref.read(authProvider.notifier).restoreSession();
+      state = state.copyWith(isUploadingAvatar: false);
+      return null;
+    } catch (e) {
+      state = state.copyWith(isUploadingAvatar: false, error: e.toString());
       return e.toString();
     }
   }

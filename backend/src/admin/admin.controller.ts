@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Role } from '@prisma/client';
 import { AdminService } from './admin.service';
 import { PaginationDto } from '../common/dto/pagination.dto';
+import { AdminUsersFilterDto } from './dto/admin-users-filter.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -22,9 +23,15 @@ export class AdminController {
   }
 
   @Get('users')
-  @ApiOperation({ summary: 'Lister les utilisateurs' })
-  users(@Query() pagination: PaginationDto) {
-    return this.service.listUsers(pagination);
+  @ApiOperation({ summary: 'Lister les utilisateurs (filtre role optionnel)' })
+  users(@Query() filter: AdminUsersFilterDto) {
+    return this.service.listUsers(filter, filter.role);
+  }
+
+  @Get('applications')
+  @ApiOperation({ summary: 'Toutes les candidatures' })
+  applications(@Query() pagination: PaginationDto) {
+    return this.service.listApplications(pagination);
   }
 
   @Patch('users/:id/toggle-active')

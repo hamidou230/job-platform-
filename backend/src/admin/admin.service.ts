@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Role } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaginationDto, buildPaginatedResult } from '../common/dto/pagination.dto';
 
@@ -33,8 +34,11 @@ export class AdminService {
     };
   }
 
-  async listUsers(pagination: PaginationDto) {
-    const where = pagination.search ? { email: { contains: pagination.search } } : {};
+  async listUsers(pagination: PaginationDto, role?: Role) {
+    const where: any = {
+      ...(pagination.search ? { email: { contains: pagination.search } } : {}),
+      ...(role ? { role } : {}),
+    };
     const [data, total] = await this.prisma.$transaction([
       this.prisma.user.findMany({
         where,
@@ -48,6 +52,22 @@ export class AdminService {
         },
       }),
       this.prisma.user.count({ where }),
+    ]);
+    return buildPaginatedResult(data, total, pagination.page, pagination.limit);
+  }
+
+  async listApplications(pagination: PaginationDto) {
+    const [data, total] = await this.prisma.$transaction([
+      this.prisma.application.findMany({
+        skip: pagination.skip,
+        take: pagination.limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          student: { select: { firstName: true, lastName: true } },
+          offer: { select: { title: true, company: { select: { name: true } } } },
+        },
+      }),
+      this.prisma.application.count(),
     ]);
     return buildPaginatedResult(data, total, pagination.page, pagination.limit);
   }

@@ -18,10 +18,23 @@ class AdminRepository {
     }
   }
 
-  Future<Paginated<AdminUser>> users({required int page, int limit = 20}) async {
+  Future<Paginated<AdminUser>> users({required int page, int limit = 20, String? role}) async {
     try {
-      final res = await _dio.get('/admin/users', queryParameters: {'page': page, 'limit': limit});
+      final res = await _dio.get('/admin/users', queryParameters: {
+        'page': page,
+        'limit': limit,
+        if (role != null) 'role': role,
+      });
       return Paginated.fromJson(res.data, (j) => AdminUser.fromJson(j));
+    } on DioException catch (e) {
+      throw mapDioError(e);
+    }
+  }
+
+  Future<Paginated<AdminApplication>> applications({required int page, int limit = 20}) async {
+    try {
+      final res = await _dio.get('/admin/applications', queryParameters: {'page': page, 'limit': limit});
+      return Paginated.fromJson(res.data, (j) => AdminApplication.fromJson(j));
     } on DioException catch (e) {
       throw mapDioError(e);
     }

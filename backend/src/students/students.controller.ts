@@ -69,9 +69,41 @@ export class StudentsController {
     return this.service.setCv(user, cvUrl);
   }
 
+  @Post('me/avatar')
+  @Roles(Role.STUDENT)
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Téléverser ma photo de profil (JPG/PNG/WEBP, max 2 Mo)' })
+  @ApiBody({
+    schema: { type: 'object', properties: { file: { type: 'string', format: 'binary' } } },
+  })
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads/avatars',
+        filename: (req, file, cb) => {
+          const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+          cb(null, `avatar-${unique}${extname(file.originalname)}`);
+        },
+      }),
+      limits: { fileSize: 2 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp'];
+        if (!allowed.includes(extname(file.originalname).toLowerCase())) {
+          return cb(new BadRequestException('Format non supporté (JPG, PNG, WEBP).'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  uploadAvatar(@CurrentUser() user: AuthUser, @UploadedFile() file: Express.Multer.File) {
+    if (!file) throw new BadRequestException('Aucun fichier reçu.');
+    const avatarUrl = `/uploads/avatars/${file.filename}`;
+    return this.service.setAvatar(user, avatarUrl);
+  }
+
   @Get(':id')
   @Roles(Role.COMPANY, Role.ADMIN)
-  @ApiOperation({ summary: 'Profil public d’un étudiant' })
+  @ApiOperation({ summary: "Profil public d'un étudiant" })
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }

@@ -20,22 +20,67 @@ class AdminStats {
   });
 
   factory AdminStats.fromJson(Map<String, dynamic> j) {
-    Map<String, int> toMap(dynamic v) {
-      if (v is Map) {
-        return v.map((k, val) => MapEntry(k.toString(), (val as num).toInt()));
+    // Le backend retourne { totals: {...}, applicationsByStatus: [...], offersByType: [...] }
+    final t = j['totals'] as Map<String, dynamic>? ?? {};
+
+    Map<String, int> groupByToMap(dynamic list, String keyField) {
+      if (list is List) {
+        return { for (final e in list) e[keyField].toString(): (e['_count'] as num).toInt() };
       }
       return {};
     }
 
     return AdminStats(
-      users: j['users'] ?? 0,
-      students: j['students'] ?? 0,
-      companies: j['companies'] ?? 0,
-      offers: j['offers'] ?? 0,
-      openOffers: j['openOffers'] ?? 0,
-      applications: j['applications'] ?? 0,
-      applicationsByStatus: toMap(j['applicationsByStatus']),
-      offersByType: toMap(j['offersByType']),
+      users: (t['users'] as num?)?.toInt() ?? 0,
+      students: (t['students'] as num?)?.toInt() ?? 0,
+      companies: (t['companies'] as num?)?.toInt() ?? 0,
+      offers: (t['offers'] as num?)?.toInt() ?? 0,
+      openOffers: (t['openOffers'] as num?)?.toInt() ?? 0,
+      applications: (t['applications'] as num?)?.toInt() ?? 0,
+      applicationsByStatus: groupByToMap(j['applicationsByStatus'], 'status'),
+      offersByType: groupByToMap(j['offersByType'], 'type'),
+    );
+  }
+}
+
+class AdminApplication {
+  final String id;
+  final String status;
+  final DateTime createdAt;
+  final String studentName;
+  final String offerTitle;
+  final String companyName;
+
+  const AdminApplication({
+    required this.id,
+    required this.status,
+    required this.createdAt,
+    required this.studentName,
+    required this.offerTitle,
+    required this.companyName,
+  });
+
+  String get statusLabel {
+    switch (status) {
+      case 'PENDING': return 'En attente';
+      case 'REVIEWED': return 'Examinée';
+      case 'ACCEPTED': return 'Acceptée';
+      case 'REJECTED': return 'Refusée';
+      default: return status;
+    }
+  }
+
+  factory AdminApplication.fromJson(Map<String, dynamic> j) {
+    final student = j['student'] as Map<String, dynamic>? ?? {};
+    final offer = j['offer'] as Map<String, dynamic>? ?? {};
+    final company = offer['company'] as Map<String, dynamic>? ?? {};
+    return AdminApplication(
+      id: j['id'],
+      status: j['status'] ?? 'PENDING',
+      createdAt: DateTime.tryParse(j['createdAt'] ?? '') ?? DateTime.now(),
+      studentName: '${student['firstName'] ?? ''} ${student['lastName'] ?? ''}'.trim(),
+      offerTitle: offer['title'] ?? '',
+      companyName: company['name'] ?? '',
     );
   }
 }
